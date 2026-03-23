@@ -1,0 +1,10 @@
+services:
+  ekz-collector:
+    build: .
+    container_name: ekz-energy-collector
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+    labels:
+      - "net.unraid.docker.managed=dockerman"

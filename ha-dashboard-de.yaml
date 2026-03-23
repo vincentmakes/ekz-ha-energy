@@ -1,0 +1,451 @@
+###############################################################################
+# EKZ Energie Dashboard (Deutsch) — v5.0
+#
+# Requires: HACS apexcharts-card, EKZ collector v5.0
+# Install: Dashboards → Add → Raw config editor → paste → save
+###############################################################################
+
+title: EKZ Energie
+views:
+  - title: Energie
+    path: ekz-energie
+    icon: mdi:lightning-bolt
+    type: sections
+    max_columns: 2
+    sections:
+
+      # ── KPIs: Heute ──────────────────────────────────────────────────
+      - title: Heute
+        type: grid
+        column_span: 1
+        cards:
+          - type: tile
+            entity: sensor.ekz_energy_monitor_daily_total_consumption
+            name: Verbrauch
+            icon: mdi:lightning-bolt
+            color: blue
+
+          - type: tile
+            entity: sensor.ekz_energy_monitor_daily_peak_consumption
+            name: Hochtarif (HT)
+            icon: mdi:sun-clock
+            color: orange
+
+          - type: tile
+            entity: sensor.ekz_energy_monitor_daily_off_peak_consumption
+            name: Niedertarif (NT)
+            icon: mdi:moon-waning-crescent
+            color: indigo
+
+      # ── KPIs: Kumuliert ──────────────────────────────────────────────
+      - title: Kumuliert
+        type: grid
+        column_span: 1
+        cards:
+          - type: tile
+            entity: sensor.ekz_energy_monitor_month_to_date_total
+            name: Dieser Monat
+            icon: mdi:calendar-month
+            color: blue
+
+          - type: tile
+            entity: sensor.ekz_energy_monitor_year_to_date_total
+            name: Dieses Jahr
+            icon: mdi:chart-timeline-variant
+            color: blue
+
+          - type: tile
+            entity: sensor.ekz_energy_monitor_data_date
+            name: Datendatum
+            icon: mdi:calendar-check
+            color: grey
+
+      # ── Monatsverbrauch: Jahresvergleich + Tageshistorie ─────────────
+      - title: ""
+        type: grid
+        column_span: 2
+        cards:
+          - type: custom:apexcharts-card
+            section_mode: true
+            graph_span: 1h
+            header:
+              title: "Monatsverbrauch: Jahresvergleich"
+              show: true
+            apex_config:
+              chart:
+                height: 300px
+                type: bar
+              xaxis:
+                type: category
+                labels:
+                  style:
+                    fontSize: "12px"
+              yaxis:
+                - title:
+                    text: kWh
+                  min: 0
+              legend:
+                show: true
+                position: top
+                formatter: |
+                  EVAL:function(val) { return val; }
+              plotOptions:
+                bar:
+                  columnWidth: "70%"
+                  borderRadius: 4
+              dataLabels:
+                enabled: true
+                style:
+                  fontSize: "10px"
+                  fontWeight: 600
+                formatter: |
+                  EVAL:function(val) { return val > 0 ? Math.round(val) : ''; }
+              tooltip:
+                y:
+                  formatter: |
+                    EVAL:function(val) { return val ? val.toFixed(1) + ' kWh' : '0 kWh'; }
+              grid:
+                borderColor: "var(--divider-color)"
+                strokeDashArray: 2
+            series:
+              - entity: sensor.ekz_energy_monitor_monthly_summary
+                name: "Vorjahr"
+                color: "#666"
+                type: column
+                data_generator: |
+                  const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+                  const vals = entity.attributes.total_prev_year || [];
+                  return months.map((m, i) => ({x: m, y: vals[i] || 0}));
+              - entity: sensor.ekz_energy_monitor_monthly_summary
+                name: "Aktuelles Jahr"
+                color: "#1e88e5"
+                type: column
+                data_generator: |
+                  const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+                  const vals = entity.attributes.total_curr_year || [];
+                  return months.map((m, i) => ({x: m, y: vals[i] || 0}));
+          - type: custom:apexcharts-card
+            section_mode: true
+            graph_span: 90d
+            header:
+              title: Tagesverbrauch (letzte 90 Tage)
+              show: true
+            apex_config:
+              chart:
+                height: 300px
+                type: bar
+                stacked: true
+              tooltip:
+                x:
+                  format: "dd MMM yyyy"
+              xaxis:
+                type: datetime
+                labels:
+                  format: "dd MMM"
+                  style:
+                    fontSize: "10px"
+                  rotate: -45
+                  rotateAlways: false
+              yaxis:
+                - title:
+                    text: kWh
+                  min: 0
+              legend:
+                show: true
+                position: top
+                formatter: |
+                  EVAL:function(val) { return val; }
+              plotOptions:
+                bar:
+                  columnWidth: "90%"
+              grid:
+                borderColor: "var(--divider-color)"
+                strokeDashArray: 2
+            series:
+              - entity: sensor.ekz_energy_monitor_daily_history
+                name: "HT"
+                color: "#fb8c00"
+                type: column
+                data_generator: |
+                  const dates = entity.attributes.history_dates || [];
+                  const ht = entity.attributes.history_ht || [];
+                  return dates.map((d, i) => [new Date(d).getTime(), ht[i] || 0]);
+              - entity: sensor.ekz_energy_monitor_daily_history
+                name: "NT"
+                color: "#5c6bc0"
+                type: column
+                data_generator: |
+                  const dates = entity.attributes.history_dates || [];
+                  const nt = entity.attributes.history_nt || [];
+                  return dates.map((d, i) => [new Date(d).getTime(), nt[i] || 0]);
+
+      # ── Leistungsprofil + Durchschn. Tagesverbrauch ─────────────────
+      - title: ""
+        type: grid
+        column_span: 2
+        cards:
+          - type: custom:apexcharts-card
+            section_mode: true
+            header:
+              title: Leistungsprofil (2 Tage)
+              show: true
+            graph_span: 2d
+            apex_config:
+              chart:
+                height: 300px
+              tooltip:
+                x:
+                  format: "dd MMM HH:mm"
+              xaxis:
+                type: datetime
+                labels:
+                  format: "dd MMM HH:mm"
+                  style:
+                    fontSize: "11px"
+              yaxis:
+                - title:
+                    text: Watt
+                  min: 0
+              grid:
+                borderColor: "var(--divider-color)"
+                strokeDashArray: 2
+            all_series_config:
+              type: area
+              stroke_width: 2
+              opacity: 0.15
+              curve: smooth
+            series:
+              - entity: sensor.ekz_energy_monitor_power_profile
+                name: Leistung (W)
+                color: "#1e88e5"
+                data_generator: |
+                  const dts = entity.attributes.profile_datetimes || [];
+                  const watts = entity.attributes.profile_watts || [];
+                  return dts.map((d, i) => [new Date(d).getTime(), watts[i] || 0]);
+          - type: custom:apexcharts-card
+            section_mode: true
+            graph_span: 1h
+            update_interval: 5min
+            header:
+              title: "Durchschn. Tagesverbrauch pro Monat"
+              show: true
+            apex_config:
+              chart:
+                height: 300px
+                type: bar
+                animations:
+                  enabled: false
+              xaxis:
+                type: category
+                labels:
+                  style:
+                    fontSize: "11px"
+                  rotate: -45
+              yaxis:
+                - title:
+                    text: kWh/Tag
+                  min: 0
+              legend:
+                show: false
+              plotOptions:
+                bar:
+                  columnWidth: "60%"
+                  borderRadius: 4
+              tooltip:
+                y:
+                  formatter: |
+                    EVAL:function(val) { return val ? val.toFixed(1) + ' kWh/Tag' : ''; }
+              grid:
+                borderColor: "var(--divider-color)"
+                strokeDashArray: 2
+            series:
+              - entity: sensor.ekz_energy_monitor_monthly_summary
+                name: "Durchschn./Tag"
+                color: "#1e88e5"
+                type: column
+                data_generator: |
+                  const labels = entity.attributes.monthly_labels || [];
+                  const totals = entity.attributes.monthly_total || [];
+                  const monthNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+                  const daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+                  return labels.map((l, i) => {
+                    const [y, mo] = l.split('-');
+                    const m = parseInt(mo);
+                    const days = daysInMonth[m-1] || 30;
+                    const avg = totals[i] ? Math.round(totals[i] / days * 10) / 10 : 0;
+                    const label = monthNames[m-1] + ' ' + y.slice(2);
+                    return {x: label, y: avg};
+                  });
+
+      # ── HT/NT Aufteilung Heute ──────────────────────────────────────
+      - title: ""
+        type: grid
+        column_span: 1
+        cards:
+          - type: custom:apexcharts-card
+            section_mode: true
+            header:
+              title: HT/NT Aufteilung Heute
+              show: true
+            graph_span: 24h
+            apex_config:
+              chart:
+                height: 300px
+                type: bar
+                stacked: true
+              tooltip:
+                x:
+                  format: "HH:mm"
+              xaxis:
+                labels:
+                  format: "HH:mm"
+                  style:
+                    fontSize: "10px"
+              yaxis:
+                - min: 0
+              legend:
+                show: true
+                position: top
+                formatter: |
+                  EVAL:function(val) { return val; }
+              grid:
+                borderColor: "var(--divider-color)"
+                strokeDashArray: 2
+            series:
+              - entity: sensor.ekz_energy_monitor_power_profile
+                name: "HT"
+                color: "#fb8c00"
+                type: column
+                data_generator: |
+                  const dts = entity.attributes.profile_datetimes || [];
+                  const kwh = entity.attributes.profile_kwh || [];
+                  const types = entity.attributes.profile_ht_nt || [];
+                  const lastDate = dts.length ? dts[dts.length-1].slice(0,10) : '';
+                  const result = [];
+                  dts.forEach((d, i) => {
+                    if (d.slice(0,10) === lastDate) result.push([new Date(d).getTime(), types[i] === 'HT' ? kwh[i] : 0]);
+                  });
+                  return result;
+              - entity: sensor.ekz_energy_monitor_power_profile
+                name: "NT"
+                color: "#5c6bc0"
+                type: column
+                data_generator: |
+                  const dts = entity.attributes.profile_datetimes || [];
+                  const kwh = entity.attributes.profile_kwh || [];
+                  const types = entity.attributes.profile_ht_nt || [];
+                  const lastDate = dts.length ? dts[dts.length-1].slice(0,10) : '';
+                  const result = [];
+                  dts.forEach((d, i) => {
+                    if (d.slice(0,10) === lastDate) result.push([new Date(d).getTime(), types[i] === 'NT' ? kwh[i] : 0]);
+                  });
+                  return result;
+
+      # ── Kumuliert Heute ──────────────────────────────────────────────
+      - title: ""
+        type: grid
+        column_span: 1
+        cards:
+          - type: custom:apexcharts-card
+            section_mode: true
+            header:
+              title: Kumuliert Heute
+              show: true
+            graph_span: 24h
+            apex_config:
+              chart:
+                height: 300px
+              tooltip:
+                x:
+                  format: "HH:mm"
+              xaxis:
+                labels:
+                  format: "HH:mm"
+                  style:
+                    fontSize: "10px"
+              yaxis:
+                - title:
+                    text: kWh
+                  min: 0
+              grid:
+                borderColor: "var(--divider-color)"
+                strokeDashArray: 2
+            series:
+              - entity: sensor.ekz_energy_monitor_power_profile
+                name: kWh
+                color: "#43a047"
+                type: area
+                stroke_width: 2
+                opacity: 0.15
+                curve: smooth
+                data_generator: |
+                  const dts = entity.attributes.profile_datetimes || [];
+                  const kwh = entity.attributes.profile_kwh || [];
+                  const lastDate = dts.length ? dts[dts.length-1].slice(0,10) : '';
+                  const result = [];
+                  let running = 0;
+                  dts.forEach((d, i) => {
+                    if (d.slice(0,10) === lastDate) {
+                      running += kwh[i] || 0;
+                      result.push([new Date(d).getTime(), Math.round(running * 10000) / 10000]);
+                    }
+                  });
+                  return result;
+
+      # ── HT/NT Donut + Details ──────────────────────────────────────
+      - title: ""
+        type: grid
+        column_span: 1
+        cards:
+          - type: custom:apexcharts-card
+            section_mode: true
+            chart_type: donut
+            header:
+              title: "Jahresverbrauch: HT vs NT"
+              show: true
+            apex_config:
+              chart:
+                height: 300px
+              legend:
+                show: true
+                position: bottom
+              plotOptions:
+                pie:
+                  donut:
+                    labels:
+                      show: true
+                      total:
+                        show: true
+                        label: Total
+                        formatter: |
+                          EVAL:function(w) { return Math.round(w.globals.seriesTotals.reduce((a,b) => a+b, 0)) + ' kWh'; }
+              dataLabels:
+                enabled: true
+                formatter: |
+                  EVAL:function(val) { return Math.round(val) + '%'; }
+            series:
+              - entity: sensor.ekz_energy_monitor_year_to_date_ht
+                name: "Hochtarif (HT)"
+                color: "#fb8c00"
+              - entity: sensor.ekz_energy_monitor_year_to_date_nt
+                name: "Niedertarif (NT)"
+                color: "#5c6bc0"
+
+      - title: Details
+        type: grid
+        column_span: 1
+        cards:
+          - type: entities
+            show_header_toggle: false
+            entities:
+              - entity: sensor.ekz_energy_monitor_month_to_date_ht
+                name: Monat HT
+              - entity: sensor.ekz_energy_monitor_month_to_date_nt
+                name: Monat NT
+              - type: divider
+              - entity: sensor.ekz_energy_monitor_year_to_date_ht
+                name: Jahr HT
+              - entity: sensor.ekz_energy_monitor_year_to_date_nt
+                name: Jahr NT
+              - entity: sensor.ekz_energy_monitor_data_date
+                name: Datendatum
