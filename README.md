@@ -4,14 +4,14 @@ Fetches electricity consumption from **myEKZ** and publishes to **Home Assistant
 Includes historical backfill, 15-minute interval charts, and YTD/MTD tracking.
 
 ## Custom Dashboard
-<img width="1175" height="642" alt="Screenshot 2026-03-23 at 16 11 13" src="https://github.com/user-attachments/assets/50abee06-a794-408d-a699-7e45be41d3f4" />
-<img width="1123" height="387" alt="Screenshot 2026-03-23 at 16 11 22" src="https://github.com/user-attachments/assets/6e840037-8eec-4e73-874c-9d9922023a78" />
-<img width="1101" height="389" alt="Screenshot 2026-03-23 at 16 11 31" src="https://github.com/user-attachments/assets/074aa67b-bd96-4532-8dd7-6232b14f2f32" />
-<img width="1071" height="389" alt="Screenshot 2026-03-23 at 16 11 45" src="https://github.com/user-attachments/assets/22ff0330-d0bf-4378-be51-12b740e39426" />
+<img width="1175" height="642" alt="Screenshot 2026-03-23 at 16 11 13" src="https://github.com/user-attachments/assets/2df608d1-2ff2-4831-9642-a8ecc42f7db3" />
+<img width="1123" height="387" alt="Screenshot 2026-03-23 at 16 11 22" src="https://github.com/user-attachments/assets/b401328c-edc8-4fc5-8f28-645604d4e2ba" />
+<img width="1101" height="389" alt="Screenshot 2026-03-23 at 16 11 31" src="https://github.com/user-attachments/assets/95981d7c-dce3-47f4-bf2c-0e129a2d5086" />
+<img width="1071" height="389" alt="Screenshot 2026-03-23 at 16 11 45" src="https://github.com/user-attachments/assets/8793f1a2-fc5c-4425-85e0-5f6974a1a6b8" />
+
 
 ## Energy Dashboard (out-of-the-box HA)  
-<img width="1161" height="682" alt="Screenshot 2026-03-23 at 17 14 15" src="https://github.com/user-attachments/assets/231f72ca-6585-4627-b501-2a42310c6d19" />
-
+<img width="1161" height="682" alt="Screenshot 2026-03-23 at 17 14 15" src="https://github.com/user-attachments/assets/be6ddce0-2fd5-47ee-9efc-203042787d2e" />
 
 Note there's a 4-8h delay when fetching the data as EKZ doesn't provide live data.  
 
